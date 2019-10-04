@@ -4,8 +4,7 @@ var g_receiving = false;
 var g_oscillator = null
 var g_analyser = null;
 var g_dataArray = null;
-var g_width=null;
-var g_height=null;
+var g_timeArray = null;
 
 function getAudioContext(){
   if(g_audioContext != null)
@@ -14,14 +13,6 @@ function getAudioContext(){
   var AudioContext = window.AudioContext || window.webkitAudioContext;
   g_audioContext = new AudioContext();
   return g_audioContext
-}
-
-function getCanvasContext(){
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-  g_width = canvas.width;
-  g_height = canvas.height;
-  return ctx;
 }
 
 function startReceiver(){
@@ -43,10 +34,12 @@ function startReceiver(){
           g_analyser.connect(context.destination)
           source.connect(g_analyser)
 
-          g_analyser.fftSize = 256;
+          g_analyser.minDecibels = -200
+          g_analyser.fftSize = 1024;
           var bufferLength = g_analyser.frequencyBinCount;
-          console.log(bufferLength);
+          console.log('bufferLength',bufferLength,'sampleRate', g_analyser.sampleRate);
           g_dataArray = new Uint8Array(bufferLength);
+          g_timeArray = new Uint8Array(bufferLength);
           captureAudio();
       })
       .catch(function(err) {
@@ -60,13 +53,20 @@ function startReceiver(){
 function captureAudio(){
   if(!g_receiving) return;
 
-  var ctx = getCanvasContext();
   var drawVisual = window.requestAnimationFrame(captureAudio);
+
+  drawFrequency(1);
+  drawTimeWave(2);
+}
+
+function drawFrequency(canvasIndex){
+  var canvas = document.getElementById('canvas'+canvasIndex);
+  var ctx = canvas.getContext('2d');
   g_analyser.getByteFrequencyData(g_dataArray);
   ctx.fillStyle = 'rgb(0,0,0)';
-  ctx.fillRect(0, 0, g_width, g_height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  var barWidth = (g_width / g_dataArray.length) * 2.5;
+  var barWidth = (canvas.width / g_dataArray.length) * 2.5;
   var barHeight;
   var x = 0;
 
@@ -74,17 +74,54 @@ function captureAudio(){
     barHeight = g_dataArray[i];
 
     ctx.fillStyle = 'rgb(' + (barHeight+100) + ',50,50)';
-    ctx.fillRect(x, g_height-barHeight/2,barWidth,barHeight/2);
+    ctx.fillRect(x, canvas.height-barHeight,barWidth,barHeight);
 
     x += barWidth + 1;
   }
 }
 
+function drawTimeWave(canvasIndex){
+  var canvas = document.getElementById('canvas'+canvasIndex);
+  var ctx = canvas.getContext('2d');
+
+  g_analyser.getByteTimeDomainData(g_timeArray);
+
+  ctx.fillStyle = "rgb(200, 200, 200)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgb(0, 0, 0)";
+
+  ctx.beginPath();
+
+  var sliceWidth = canvas.width * 1.0 / g_timeArray.length;
+  var x = 0;
+
+  for (var i = 0; i < g_timeArray.length; i++) {
+
+    var v = g_timeArray[i]/128;
+    var y = v * canvas.height / 2;
+
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+
+    x += sliceWidth;
+  }
+
+  ctx.lineTo(canvas.width, canvas.height / 2);
+  ctx.stroke();
+}
+
 function stopReceiver(){
-  console.log("canvas", g_width, g_height);
-  var ctx = getCanvasContext();
-  ctx.fillStyle = 'rgb(255, 0, 0)';
-  ctx.fillRect(0, 0, g_width, g_height);
+  for( var i=1;i<=2;i++){
+    var canvas = document.getElementById('canvas'+i);
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = 'rgb(255, 0, 0)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 function startTransmitter(){
