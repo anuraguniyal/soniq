@@ -3,13 +3,16 @@
     <head>
         <meta charset="UTF-8">
         <title>Distance-O-meter</title>
+        <link rel="stylesheet" type="text/css" href="styles/main.css">
         <script src="scripts/app.js"/></script>
     </head>
 
     <body onload="onload()">
-        <button id='btn_receiver'>Start Receiver</button>
-        <button id='btn_transmitter'>Start Transmitter</button>
         <label>Freq:</label> <input type="text" id="freq" value="1000">
+        <hr>
+        <button id='btn_receiver'>Start Receiver</button>
+        <hr>
+        <button id='btn_transmitter'>Start Transmitter</button>
         <div>
         <canvas id="canvas"></canvas>
         </div>
