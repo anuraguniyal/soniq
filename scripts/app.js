@@ -50,10 +50,10 @@ function startReceiver(){
           captureAudio();
       })
       .catch(function(err) {
-          console.log('The following gUM error occured: ' + err);
+          alert('The following error occured: ' + err);
       });
   } else {
-     console.log('getUserMedia not supported on your browser!');
+     alert('getUserMedia not supported on your browser!');
   }
 }
 
